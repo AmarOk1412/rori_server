@@ -95,8 +95,11 @@ impl Server {
 
     fn handle_client(&mut self, mut client: Client) {
         thread::spawn(move || {
-            println!("Client: {}", client.read());
-            let data_to_process = RoriData::from_json(client.read());
+            let data_received = client.read();
+            let end = data_received.find(0u8 as char);
+            let (data_received, _) = data_received.split_at(end.unwrap_or(data_received.len()));
+            println!("[RECEIVED]:\n{}", data_received);
+            let data_to_process = RoriData::from_json(String::from(data_received));
             let module_manager = ModuleManager::new(data_to_process);
             module_manager.process();
         });
