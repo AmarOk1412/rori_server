@@ -39,6 +39,7 @@ impl ModuleManager {
             .expect("failed to read module list");
         // parse json
         let modules_list = Json::from_str(&*modules).unwrap();
+        // foreach priority, launch enabled modules if condition ok
         let mut stop = false;
         let mut priority = 0;
         let mut module_found = false;
@@ -49,23 +50,23 @@ impl ModuleManager {
                 if module.priority == priority {
                     module_found = true;
                     println!("Module found: {}", module.name);
-                    let re = Regex::new(&*module.condition).unwrap();
-                    if module.enabled && re.is_match(&*self.data.content) {
-                        println!("The module match!");
-                        stop = true;
+                    // Parse text module
+                    if module.enabled && self.data.datatype == "text" {
+                        let re = Regex::new(&*module.condition).unwrap();
+                        if re.is_match(&*self.data.content) {
+                            println!("The module match!");
+                            stop = true;
+                        }
+                    } else if !module.enabled {
+                        println!("Unknown datatype: {}", self.data.datatype);
                     }
+
                 }
             }
             if !module_found {
                 break;
             }
             priority += 1;
-        }
-        // foreach priority, launch enabled modules if condition ok
-        if self.data.datatype == "text" {
-            println!("Process plain text data");
-        } else {
-            println!("Print unknown datatype: {}", self.data.datatype);
         }
     }
 }
