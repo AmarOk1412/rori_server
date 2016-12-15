@@ -1,5 +1,4 @@
 use std::io::prelude::*;
-use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::fs::File;
 use std::net::{TcpListener, TcpStream};
@@ -50,12 +49,7 @@ pub struct Server {
 
 impl Server {
     fn parse_config(data: String) -> String {
-        let params: ConfigServer = decode(&data[..])
-            .map_err(|_| {
-                Error::new(ErrorKind::InvalidInput,
-                           "Failed to decode configuration file.")
-            })
-            .unwrap();
+        let params: ConfigServer = decode(&data[..]).unwrap();
 
         format!("{}:{}",
                 &params.ip.unwrap_or(String::from("")),
