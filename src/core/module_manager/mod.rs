@@ -50,7 +50,7 @@ impl ModuleManager {
                     module_found = true;
                     println!("Module found: {}", module.name);
                     let re = Regex::new(&*module.condition).unwrap();
-                    if re.is_match(&*self.data.content) {
+                    if module.enabled && re.is_match(&*self.data.content) {
                         println!("The module match!");
                         stop = true;
                     }
