@@ -1,3 +1,6 @@
 [submodule "src/rori_utils"]
 	path = src/rori_utils
 	url = git@github.com:AmarOk1412/rori_utils.git
+[submodule "rori_modules"]
+	path = rori_modules
+	url = git@github.com:AmarOk1412/rori_modules.git

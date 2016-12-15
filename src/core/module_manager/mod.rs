@@ -29,7 +29,7 @@ impl ModuleManager {
 
     pub fn process(&self) {
         // open modules/self.data.datatype.json
-        let path = format!("modules/{}.json", self.data.datatype);
+        let path = format!("rori_modules/{}.json", self.data.datatype);
         let mut file = File::open(path)
             .ok()
             .expect("Can't find modules for this type");
