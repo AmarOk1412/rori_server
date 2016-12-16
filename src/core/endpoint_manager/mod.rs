@@ -41,12 +41,14 @@ impl EndpointManager {
         }
     }
 
-    pub fn get_endpoint_for_type(&self, datatype: String) -> Vec<Endpoint> {
+    pub fn get_endpoint_for_type(&self, datatype: String, owner: String) -> Vec<Endpoint> {
         let mut result: Vec<Endpoint> = Vec::new();
         let endpoints = self.endpoints.clone();
         for endpoint in endpoints {
             if endpoint.compatible_data.contains(&datatype) {
-                result.push(endpoint);
+                if owner.len() == 0 || owner == endpoint.owner {
+                    result.push(endpoint);
+                }
             }
         }
         result
