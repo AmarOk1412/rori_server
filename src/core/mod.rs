@@ -7,11 +7,17 @@ use std::thread;
 use rustc_serialize::json::decode;
 
 use rori_utils::data::RoriData;
+pub mod endpoint_manager;
 pub mod module_manager;
 use core::module_manager::ModuleManager;
+use core::endpoint_manager::EndpointManager;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref ENDPOINTMANAGER: Mutex<EndpointManager> = Mutex::new(EndpointManager::new());
+}
 
 // TODO sslstream
-
 struct Client {
     stream: TcpStream,
 }
@@ -94,8 +100,12 @@ impl Server {
             let (data_received, _) = data_received.split_at(end.unwrap_or(data_received.len()));
             println!("[RECEIVED]:\n{}", data_received);
             let data_to_process = RoriData::from_json(String::from(data_received));
-            let module_manager = ModuleManager::new(data_to_process);
-            module_manager.process();
+            if data_to_process.datatype == "register" {
+                ENDPOINTMANAGER.lock().unwrap().register_endpoint(data_to_process);
+            } else {
+                let module_manager = ModuleManager::new(data_to_process);
+                module_manager.process();
+            }
         });
     }
 }

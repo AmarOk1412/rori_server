@@ -27,6 +27,7 @@ impl ModuleManager {
         return ModuleManager { data: data };
     }
 
+    #[allow(unused_assignments)]
     pub fn process(&self) {
         // open modules/self.data.datatype.json
         let path = format!("rori_modules/{}.json", self.data.datatype);
