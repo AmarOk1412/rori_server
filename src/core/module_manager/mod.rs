@@ -5,6 +5,7 @@ use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::prelude::*;
 use regex::Regex;
+use std::process::Command;
 
 #[derive(Clone, RustcDecodable, RustcEncodable, Default, PartialEq, Debug)]
 pub struct Module {
@@ -55,8 +56,19 @@ impl ModuleManager {
                     if module.enabled && self.data.datatype == "text" {
                         let re = Regex::new(&*module.condition).unwrap();
                         if re.is_match(&*self.data.content) {
-                            println!("The module match!");
-                            stop = true;
+                            println!("The module match! Launch module...");
+                            let output = Command::new("/bin/sh")
+                                .arg("exec_mod.sh")
+                                .arg(module.path)
+                                .output()
+                                .expect("failed to execute process");
+                            let continue_processing = String::from_utf8(output.stdout)
+                                .unwrap_or(String::from(""));
+                            println!("OUTPUT {}", continue_processing);
+                            if continue_processing.trim() == "False" {
+                                stop = true;
+                                println!("Stop processing modules");
+                            }
                         }
                     } else if !module.enabled {
                         println!("Unknown datatype: {}", self.data.datatype);
