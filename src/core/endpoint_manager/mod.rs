@@ -1,8 +1,9 @@
 use rori_utils::data::RoriData;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, RustcEncodable)]
 pub struct Endpoint {
     pub name: String,
+    pub id: u64,
     pub owner: String,
     pub address: String,
     pub compatible_data: Vec<String>,
@@ -11,11 +12,15 @@ pub struct Endpoint {
 #[derive(Clone)]
 pub struct EndpointManager {
     endpoints: Vec<Endpoint>,
+    id: u64,
 }
 
 impl EndpointManager {
     pub fn new() -> EndpointManager {
-        EndpointManager { endpoints: Vec::new() }
+        EndpointManager {
+            endpoints: Vec::new(),
+            id: 0,
+        }
     }
 
     pub fn register_endpoint(&mut self, data: RoriData) {
@@ -33,12 +38,34 @@ impl EndpointManager {
             }
             let endpoint = Endpoint {
                 name: data.client,
+                id: self.id,
                 owner: data.author,
                 address: address,
                 compatible_data: content_part,
             };
             self.endpoints.push(endpoint);
+            self.id += 1;
         }
+    }
+
+    pub fn remove_endpoint(&mut self, id_to_rm: u64) -> bool {
+        let index_to_remove = self.get_endpoint_index(id_to_rm);
+        if index_to_remove > 0 {
+            self.endpoints.remove(index_to_remove as usize);
+            return true;
+        }
+        return false;
+    }
+
+    fn get_endpoint_index(&mut self, id_to_rm: u64) -> i64 {
+        let mut cpt = 0;
+        for endpoint in self.endpoints.clone() {
+            if id_to_rm == endpoint.id {
+                return cpt;
+            }
+            cpt += 1;
+        }
+        -1
     }
 
     pub fn get_endpoint_for_type(&self, datatype: String, owner: String) -> Vec<Endpoint> {

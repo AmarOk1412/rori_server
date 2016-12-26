@@ -7,3 +7,6 @@ authors = ["AmarOk <amarok@enconn.fr>"]
 rustc-serialize = "0.3"
 regex = "0.1"
 lazy_static = "0.1.*"
+iron = "*"
+router = "*"
+hyper = "*"
