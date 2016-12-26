@@ -1,4 +1,6 @@
 use rori_utils::data::RoriData;
+use std::net::TcpStream;
+use std::io::Write;
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable)]
 pub struct Endpoint {
@@ -50,7 +52,7 @@ impl EndpointManager {
 
     pub fn remove_endpoint(&mut self, id_to_rm: u64) -> bool {
         let index_to_remove = self.get_endpoint_index(id_to_rm);
-        if index_to_remove > 0 {
+        if index_to_remove >= 0 {
             self.endpoints.remove(index_to_remove as usize);
             return true;
         }
@@ -79,5 +81,15 @@ impl EndpointManager {
             }
         }
         result
+    }
+
+    pub fn send_to_endpoint(&self, id: u64, data: &String) {
+        let endpoints = self.endpoints.clone();
+        for endpoint in endpoints {
+            if endpoint.id == id {
+                let mut stream = TcpStream::connect(&*endpoint.address).unwrap();
+                let _ = stream.write(data.to_string().as_bytes());
+            }
+        }
     }
 }

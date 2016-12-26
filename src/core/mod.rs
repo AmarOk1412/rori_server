@@ -149,12 +149,10 @@ impl API {
 
     pub fn start(&mut self) {
         let mut router = Router::new();
-        router.get("/help", API::help, "");
-        router.get("/rm/:id", API::remove_client, "id");
-        router.get("/client/:owner/:datatype",
-                   API::get_client,
-                   "owner, datatype");
-        router.post("/send", API::send_from_rori, "request");
+        router.get("/help", API::help, "help");
+        router.get("/rm/:id", API::remove_client, "rm");
+        router.get("/client/:owner/:datatype", API::get_client, "client");
+        router.post("/send/:id", API::send_from_rori, "send");
         Iron::new(router).http(&*self.address).unwrap();
     }
 
@@ -163,7 +161,7 @@ impl API {
         let help = "RORI API:
         GET rm/:id => remove an endpoint
         GET client/:owner/:datatype => get endpoint list
-        POST RoriData to send => send data for client (not implemented)";
+        POST RoriData to send/:id => send data for client (not implemented)";
         Ok(Response::with((status::Ok, help)))
     }
 
@@ -196,11 +194,16 @@ impl API {
     }
 
     pub fn send_from_rori(request: &mut Request) -> IronResult<Response> {
+        let id = request.extensions.get::<Router>().unwrap().find("id").unwrap_or("");
+        let id = id.parse::<i64>().unwrap_or(-1);
+        if id < 0 {
+            return Ok(Response::with((status::Ok, "No id specified")));
+        }
         let mut payload = String::from("");
         let _ = request.body.read_to_string(&mut payload);
-        let data = RoriData::from_json(payload);
-        // TODO send to client
-        // TODO add client id
-        Ok(Response::with((status::Ok, data.to_string())))
+        ENDPOINTMANAGER.lock()
+            .unwrap()
+            .send_to_endpoint(id as u64, &payload);
+        Ok(Response::with((status::Ok, payload)))
     }
 }
