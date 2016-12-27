@@ -45,9 +45,23 @@ impl EndpointManager {
                 address: address,
                 compatible_data: content_part,
             };
-            self.endpoints.push(endpoint);
-            self.id += 1;
+            // Avoid duplicates
+            if !self.endpoint_already_exists(&endpoint) {
+                self.endpoints.push(endpoint);
+                self.id += 1;
+            }
         }
+    }
+
+    pub fn endpoint_already_exists(&mut self, endpoint: &Endpoint) -> bool {
+        for elem in self.endpoints.clone() {
+            if endpoint.name == elem.name && endpoint.owner == elem.owner &&
+               elem.address == endpoint.address &&
+               elem.compatible_data == endpoint.compatible_data {
+                return true;
+            }
+        }
+        return false;
     }
 
     pub fn remove_endpoint(&mut self, id_to_rm: u64) -> bool {
