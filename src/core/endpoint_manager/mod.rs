@@ -112,7 +112,7 @@ impl EndpointManager {
         let endpoints = self.endpoints.clone();
         for endpoint in endpoints {
             if endpoint.compatible_data.contains(&datatype) {
-                if owner.len() == 0 || owner == endpoint.owner {
+                if owner.len() == 0 || owner == endpoint.owner || endpoint.owner == "*" {
                     result.push(endpoint);
                 }
             }
