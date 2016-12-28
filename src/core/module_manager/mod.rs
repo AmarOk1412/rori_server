@@ -62,9 +62,17 @@ impl ModuleManager {
                         if re.is_match(&*self.data.content) {
                             info!(target:"module_manager", "The module match! Launch module...");
                             // TODO launch directly with Python3
+                            let author = format!("\"{}\"", &*self.data.author);
+                            let content = format!("\"{}\"", &*self.data.content);
+                            let client = format!("\"{}\"", &*self.data.client);
+                            let datatype = format!("\"{}\"", &*self.data.datatype);
                             let output = Command::new("/bin/sh")
                                 .arg("exec_mod.sh")
                                 .arg(module.path)
+                                .arg(author)
+                                .arg(content)
+                                .arg(client)
+                                .arg(datatype)
                                 .output()
                                 .expect("failed to execute process");
                             let continue_processing = String::from_utf8(output.stdout)
