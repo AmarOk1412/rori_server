@@ -51,15 +51,15 @@ impl ModuleManager {
         let mut module_found = false;
         while !stop {
             module_found = false;
-            for item in modules_list.as_array() {
-                let module: Module = decode(&*item[0].to_string()).unwrap();
+            for item in modules_list.as_array().unwrap() {
+                let module: Module = decode(&*item.to_string()).unwrap();
                 if module.priority == priority {
                     module_found = true;
                     info!(target:"module_manager", "Module found: {}", module.name);
                     // Parse text module
                     if module.enabled && self.data.datatype == "text" {
                         let re = Regex::new(&*module.condition).unwrap();
-                        if re.is_match(&*self.data.content) {
+                        if re.is_match(&*self.data.content.to_lowercase()) {
                             info!(target:"module_manager", "The module match! Launch module...");
                             // TODO launch directly with Python3
                             let author = format!("\"{}\"", &*self.data.author);
@@ -78,10 +78,13 @@ impl ModuleManager {
                             let continue_processing = String::from_utf8(output.stdout)
                                 .unwrap_or(String::from(""));
                             info!(target:"module_manager", "continue_processing: {}", continue_processing);
-                            if continue_processing.trim() == "False" {
+                            if continue_processing.trim().to_lowercase().contains("false") {
                                 stop = true;
                                 info!(target:"module_manager", "Stop processing modules");
+                                break;
                             }
+                        } else {
+                            info!(target:"module_manager", "condition don't match");
                         }
                     } else if !module.enabled {
                         warn!(target:"module_manager", "Unknown datatype: {}", self.data.datatype);
