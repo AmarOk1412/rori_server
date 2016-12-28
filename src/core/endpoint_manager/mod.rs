@@ -17,6 +17,9 @@ pub struct EndpointManager {
     id: u64,
 }
 
+/**
+ * Manage endpoints
+ */
 impl EndpointManager {
     pub fn new() -> EndpointManager {
         EndpointManager {
@@ -25,8 +28,13 @@ impl EndpointManager {
         }
     }
 
+    /**
+     * Save an endpoint if it's not a duplicate
+     */
     pub fn register_endpoint(&mut self, data: RoriData) {
+        // if we receive a register command
         if data.datatype == "register" {
+            // content = ip:port|type1|type2...
             let mut collected_part: Vec<&str> = data.content.split('|').collect();
             let mut address = String::from("");
             let mut content_part: Vec<String> = Vec::new();
@@ -53,6 +61,10 @@ impl EndpointManager {
         }
     }
 
+    /**
+     * Get if an endpoint already exists
+     * @return if we find a endpoint
+     */
     pub fn endpoint_already_exists(&mut self, endpoint: &Endpoint) -> bool {
         for elem in self.endpoints.clone() {
             if endpoint.name == elem.name && endpoint.owner == elem.owner &&
@@ -64,6 +76,10 @@ impl EndpointManager {
         return false;
     }
 
+    /**
+     * Remove an endpoint if exists
+     * @return if the endpoint is removed
+     */
     pub fn remove_endpoint(&mut self, id_to_rm: u64) -> bool {
         let index_to_remove = self.get_endpoint_index(id_to_rm);
         if index_to_remove >= 0 {
@@ -73,6 +89,10 @@ impl EndpointManager {
         return false;
     }
 
+    /**
+     * Find an endpoint by id
+     * @return the position of the endpoint
+     */
     fn get_endpoint_index(&mut self, id_to_rm: u64) -> i64 {
         let mut cpt = 0;
         for endpoint in self.endpoints.clone() {
@@ -84,6 +104,9 @@ impl EndpointManager {
         -1
     }
 
+    /**
+     * Get endpoints
+     */
     pub fn get_endpoint_for_type(&self, datatype: String, owner: String) -> Vec<Endpoint> {
         let mut result: Vec<Endpoint> = Vec::new();
         let endpoints = self.endpoints.clone();
@@ -97,6 +120,9 @@ impl EndpointManager {
         result
     }
 
+    /**
+     * send a data to the endpoint with the given id
+     */
     pub fn send_to_endpoint(&self, id: u64, data: &String) {
         let endpoints = self.endpoints.clone();
         for endpoint in endpoints {

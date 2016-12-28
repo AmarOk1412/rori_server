@@ -23,6 +23,10 @@ pub struct ModuleManager {
     data: RoriData,
 }
 
+/**
+ * When RORI receives a command, it needs to process this message.
+ * The module manager tries to call all interresting modules.
+ */
 impl ModuleManager {
     pub fn new(data: RoriData) -> ModuleManager {
         return ModuleManager { data: data };
@@ -51,12 +55,13 @@ impl ModuleManager {
                 let module: Module = decode(&*item[0].to_string()).unwrap();
                 if module.priority == priority {
                     module_found = true;
-                    println!("Module found: {}", module.name);
+                    info!(target:"module_manager", "Module found: {}", module.name);
                     // Parse text module
                     if module.enabled && self.data.datatype == "text" {
                         let re = Regex::new(&*module.condition).unwrap();
                         if re.is_match(&*self.data.content) {
-                            println!("The module match! Launch module...");
+                            info!(target:"module_manager", "The module match! Launch module...");
+                            // TODO launch directly with Python3
                             let output = Command::new("/bin/sh")
                                 .arg("exec_mod.sh")
                                 .arg(module.path)
@@ -64,14 +69,14 @@ impl ModuleManager {
                                 .expect("failed to execute process");
                             let continue_processing = String::from_utf8(output.stdout)
                                 .unwrap_or(String::from(""));
-                            println!("OUTPUT {}", continue_processing);
+                            info!(target:"module_manager", "continue_processing: {}", continue_processing);
                             if continue_processing.trim() == "False" {
                                 stop = true;
-                                println!("Stop processing modules");
+                                info!(target:"module_manager", "Stop processing modules");
                             }
                         }
                     } else if !module.enabled {
-                        println!("Unknown datatype: {}", self.data.datatype);
+                        warn!(target:"module_manager", "Unknown datatype: {}", self.data.datatype);
                     }
 
                 }

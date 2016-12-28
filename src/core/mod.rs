@@ -1,21 +1,21 @@
-use std::io::prelude::*;
-use std::path::Path;
-use std::fs::File;
-use std::net::{TcpListener, TcpStream};
-use std::str::from_utf8;
-use std::thread;
-use rustc_serialize::json::{self, decode};
 
-use rori_utils::data::RoriData;
 pub mod endpoint_manager;
 pub mod module_manager;
+
 use core::module_manager::ModuleManager;
 use core::endpoint_manager::EndpointManager;
-use std::sync::Mutex;
-// API
 use iron::prelude::*;
 use iron::status;
+use rori_utils::data::RoriData;
 use router::Router;
+use rustc_serialize::json::{self, decode};
+use std::fs::File;
+use std::io::prelude::*;
+use std::net::{TcpListener, TcpStream};
+use std::path::Path;
+use std::str::from_utf8;
+use std::sync::Mutex;
+use std::thread;
 
 lazy_static! {
     static ref ENDPOINTMANAGER: Mutex<EndpointManager> = Mutex::new(EndpointManager::new());
@@ -89,7 +89,7 @@ impl Server {
                     self.handle_client(client);
                 }
                 Err(e) => {
-                    println!("Connection failed because {}", e);
+                    error!(target:"server", "Connection failed because {}", e);
                 }
             }
         }
@@ -102,7 +102,7 @@ impl Server {
             let data_received = client.read();
             let end = data_received.find(0u8 as char);
             let (data_received, _) = data_received.split_at(end.unwrap_or(data_received.len()));
-            println!("[RECEIVED]:\n{}", data_received);
+            info!(target:"server", "\n{}", data_received);
             let data_to_process = RoriData::from_json(String::from(data_received));
             if data_to_process.datatype == "register" {
                 ENDPOINTMANAGER.lock().unwrap().register_endpoint(data_to_process);
