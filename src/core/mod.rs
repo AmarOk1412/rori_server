@@ -6,6 +6,8 @@ use core::module_manager::ModuleManager;
 use core::endpoint_manager::EndpointManager;
 use iron::prelude::*;
 use iron::status;
+use openssl::ssl::{SslContext, SslMethod, SslStream, SSL_VERIFY_NONE};
+use openssl::x509::X509FileType::PEM;
 use rori_utils::data::RoriData;
 use router::Router;
 use rustc_serialize::json::{self, decode};
@@ -21,13 +23,12 @@ lazy_static! {
     static ref ENDPOINTMANAGER: Mutex<EndpointManager> = Mutex::new(EndpointManager::new());
 }
 
-// TODO sslstream
 struct Client {
-    stream: TcpStream,
+    stream: SslStream<TcpStream>,
 }
 
 impl Client {
-    fn new(stream: TcpStream) -> Client {
+    fn new(stream: SslStream<TcpStream>) -> Client {
         return Client { stream: stream };
     }
 
@@ -51,21 +52,17 @@ impl Client {
 struct ConfigServer {
     pub ip: Option<String>,
     pub port: Option<String>,
+    pub cert: Option<String>,
+    pub key: Option<String>,
 }
 
 pub struct Server {
     address: String,
+    cert: String,
+    key: String,
 }
 
 impl Server {
-    fn parse_config(data: String) -> String {
-        let params: ConfigServer = decode(&data[..]).unwrap();
-
-        format!("{}:{}",
-                &params.ip.unwrap_or(String::from("")),
-                &params.port.unwrap_or(String::from("")))
-    }
-
     pub fn new<P: AsRef<Path>>(config: P) -> Server {
         // Configure from file
         let mut file = File::open(config)
@@ -75,17 +72,36 @@ impl Server {
         file.read_to_string(&mut data)
             .ok()
             .expect("failed to read!");
-        let address = Server::parse_config(data);
-        Server { address: address }
+        let params: ConfigServer = decode(&data[..]).unwrap();
+        let address = format!("{}:{}",
+                              &params.ip.unwrap_or(String::from("")),
+                              &params.port.unwrap_or(String::from("")));
+
+        Server {
+            address: address,
+            cert: params.cert.unwrap_or(String::from("")),
+            key: params.key.unwrap_or(String::from("")),
+        }
     }
 
     pub fn start(&mut self) {
         let listener = TcpListener::bind(&*self.address).unwrap();
-
+        let mut ssl_context = SslContext::new(SslMethod::Tlsv1).unwrap();
+        match ssl_context.set_certificate_file(&*self.cert.clone(), PEM) {
+            Ok(_) => info!(target:"Server", "Certificate set"),
+            Err(_) => error!(target:"Server", "Can't set certificate file"),
+        };
+        ssl_context.set_verify(SSL_VERIFY_NONE, None);
+        match ssl_context.set_private_key_file(&*self.key.clone(), PEM) {
+            Ok(_) => info!(target:"Server", "Private key set"),
+            Err(_) => error!(target:"Server", "Can't set private key"),
+        };
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
-                    let client = Client::new(stream.try_clone().unwrap());
+                    let ssl_stream = SslStream::accept(&ssl_context, stream.try_clone().unwrap())
+                        .unwrap();
+                    let client = Client::new(ssl_stream.try_clone().unwrap());
                     self.handle_client(client);
                 }
                 Err(e) => {

@@ -8,6 +8,8 @@ extern crate rustc_serialize;
 extern crate regex;
 extern crate router;
 
+extern crate openssl;
+
 mod core;
 mod rori_utils;
 
