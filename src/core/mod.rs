@@ -2,6 +2,8 @@
 pub mod endpoint_manager;
 pub mod module_manager;
 
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
 use core::module_manager::ModuleManager;
 use core::endpoint_manager::EndpointManager;
 use iron::prelude::*;
@@ -47,6 +49,11 @@ impl Client {
     }
 }
 
+#[derive(Clone, RustcDecodable, RustcEncodable, Default, PartialEq, Debug)]
+struct AuthorizedUser {
+    pub name: Option<String>,
+    pub secret: Option<String>,
+}
 
 #[derive(Clone, RustcDecodable, RustcEncodable, Default, PartialEq, Debug)]
 struct ConfigServer {
@@ -54,12 +61,14 @@ struct ConfigServer {
     pub port: Option<String>,
     pub cert: Option<String>,
     pub key: Option<String>,
+    pub authorize: Vec<AuthorizedUser>,
 }
 
 pub struct Server {
     address: String,
     cert: String,
     key: String,
+    authorize: Vec<AuthorizedUser>,
 }
 
 impl Server {
@@ -81,6 +90,7 @@ impl Server {
             address: address,
             cert: params.cert.unwrap_or(String::from("")),
             key: params.key.unwrap_or(String::from("")),
+            authorize: params.authorize,
         }
     }
 
@@ -121,18 +131,39 @@ impl Server {
         drop(listener);
     }
 
+    fn is_authorized(authorize: Vec<AuthorizedUser>, data: RoriData) -> bool {
+        let mut hasher = Sha256::new();
+        hasher.input_str(&*data.secret);
+        let secret = hasher.result_str();
+        for client in authorize {
+            let data_secret = &*data.secret;
+            if client.name.unwrap().to_lowercase() == data.client.to_lowercase() &&
+               secret.to_lowercase() == client.secret.unwrap().to_lowercase() {
+                return true;
+            }
+        }
+        false
+    }
+
     fn handle_client(&mut self, mut client: Client) {
+        let authorized_clients = self.authorize.clone();
         thread::spawn(move || {
             let data_received = client.read();
             let end = data_received.find(0u8 as char);
             let (data_received, _) = data_received.split_at(end.unwrap_or(data_received.len()));
             info!(target:"server", "\n{}", data_received);
             let data_to_process = RoriData::from_json(String::from(data_received));
-            if data_to_process.datatype == "register" {
-                ENDPOINTMANAGER.lock().unwrap().register_endpoint(data_to_process);
+            let data_authorized = Server::is_authorized(authorized_clients,
+                                                        data_to_process.clone());
+            if data_authorized {
+                if data_to_process.datatype == "register" {
+                    ENDPOINTMANAGER.lock().unwrap().register_endpoint(data_to_process);
+                } else {
+                    let module_manager = ModuleManager::new(data_to_process);
+                    module_manager.process();
+                }
             } else {
-                let module_manager = ModuleManager::new(data_to_process);
-                module_manager.process();
+                error!(target:"Server", "Stream not authorized! Don't process.");
             }
         });
     }

@@ -1,3 +1,4 @@
+extern crate crypto;
 extern crate env_logger;
 extern crate iron;
 #[macro_use]

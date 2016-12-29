@@ -4,5 +4,16 @@
  "api_ip":"0.0.0.0",
  "api_port":"3000",
  "cert":"key/cert.pem",
- "key":"key/key.pem"
+ "key":"key/key.pem",
+ "secret":"secret",
+ "authorize": [
+   {
+     "name":"irc_entry_module",
+     "secret":"2BB80D537B1DA3E38BD30361AA855686BDE0EACD7162FEF6A25FE97BF527A25B"
+   },
+   {
+     "name":"rori_desktop_client",
+     "secret":"2BB80D537B1DA3E38BD30361AA855686BDE0EACD7162FEF6A25FE97BF527A25B"
+   }
+ ]
 }
