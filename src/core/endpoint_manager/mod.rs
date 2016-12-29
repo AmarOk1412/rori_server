@@ -1,3 +1,4 @@
+use openssl::ssl::{SslContext, SslMethod, SslStream, Ssl};
 use rori_utils::data::RoriData;
 use std::net::TcpStream;
 use std::io::Write;
@@ -127,8 +128,14 @@ impl EndpointManager {
         let endpoints = self.endpoints.clone();
         for endpoint in endpoints {
             if endpoint.id == id {
-                let mut stream = TcpStream::connect(&*endpoint.address).unwrap();
-                let _ = stream.write(data.to_string().as_bytes());
+                let context = SslContext::new(SslMethod::Tlsv1).unwrap();
+                let ssl = Ssl::new(&context).unwrap();
+                let inner = TcpStream::connect(&*endpoint.address).unwrap();
+                if let Ok(mut stream) = SslStream::connect(ssl, inner) {
+                    let _ = stream.write(data.to_string().as_bytes());
+                } else {
+                    error!(target:"RoriClient", "Couldn't connect to RORI at address {}", &*endpoint.address);
+                }
             }
         }
     }

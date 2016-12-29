@@ -86,7 +86,7 @@ impl Server {
 
     pub fn start(&mut self) {
         let listener = TcpListener::bind(&*self.address).unwrap();
-        let mut ssl_context = SslContext::new(SslMethod::Tlsv1).unwrap();
+        let mut ssl_context = SslContext::new(SslMethod::Sslv23).unwrap();
         match ssl_context.set_certificate_file(&*self.cert.clone(), PEM) {
             Ok(_) => info!(target:"Server", "Certificate set"),
             Err(_) => error!(target:"Server", "Can't set certificate file"),
