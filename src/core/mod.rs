@@ -136,7 +136,6 @@ impl Server {
         hasher.input_str(&*data.secret);
         let secret = hasher.result_str();
         for client in authorize {
-            let data_secret = &*data.secret;
             if client.name.unwrap().to_lowercase() == data.client.to_lowercase() &&
                secret.to_lowercase() == client.secret.unwrap().to_lowercase() {
                 return true;
