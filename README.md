@@ -2,6 +2,8 @@
 
 # rori_server
 
+![](https://travis-ci.org/AmarOk1412/rori_server.svg?branch=master)
+
 This is the central point of _[RORI](https://github.com/AmarOk1412/rori/)_. This application get data from entry points, call modules to process this data and send data to endpoints to execute commands. To understand how it works, you can read the [wiki](https://github.com/AmarOk1412/rori/wiki).
 
 # Installation
