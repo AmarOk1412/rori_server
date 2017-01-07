@@ -2,7 +2,6 @@ sudo: required
 git:
     submodules: false
 before_install:
- - sudo apt-get install python3-dev libpython3-dev python3
  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
  - git submodule update --init --recursive
 language: rust
@@ -10,11 +9,12 @@ rust:
   - stable
   - beta
   - nightly
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
+addons:
+  apt:
+    sources: ['pythonxy-devel']
+    packages:
+    - python-dev
+    - python3-dev
 matrix:
   allow_failures:
     - rust: nightly
