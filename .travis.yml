@@ -2,7 +2,7 @@ sudo: required
 git:
     submodules: false
 before_install:
- - sudo apt-get install python3-dev libpython3-dev python3
+ - sudo apt-get install python3-dev
  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
  - git submodule update --init --recursive
 language: rust
