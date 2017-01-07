@@ -6,6 +6,10 @@ use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::prelude::*;
 
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread;
+
 #[derive(Clone, RustcDecodable, RustcEncodable, Default, PartialEq, Debug)]
 pub struct Module {
     pub name: String,
@@ -46,40 +50,59 @@ impl ModuleManager {
         let modules_list = Json::from_str(&*modules).unwrap();
         // foreach priority, launch enabled modules if condition ok
         let mut priority = 0;
+
+
         // TODO Arc
-        let mut stop = false;
-        let mut module_found = false;
-        while !stop {
-            module_found = false;
+        let stop: AtomicBool = AtomicBool::new(false);
+        let stop_arc: Arc<AtomicBool> = Arc::new(stop);
+        let module_found: AtomicBool = AtomicBool::new(false);
+        let module_found_arc: Arc<AtomicBool> = Arc::new(module_found);
+        while !stop_arc.load(Ordering::Relaxed) {
+            let mut children = vec![];
+            module_found_arc.store(false, Ordering::Relaxed);
             for item in modules_list.as_array().unwrap() {
                 // TODO new thread
-                let module: Module = decode(&*item.to_string()).unwrap();
-                if module.priority == priority {
-                    module_found = true;
-                    info!(target:"module_manager", "Module found: {}", module.name);
-                    // Parse text module
-                    if module.enabled && self.data.datatype == "text" {
-                        let re = Regex::new(&*module.condition).unwrap();
-                        if re.is_match(&*self.data.content.to_lowercase()) {
-                            info!(target:"module_manager", "The module match! Launch module...");
-                            let continue_processing = ModuleManager::exec_module(module.path,
-                                                                                 self.data.clone());
-                            info!(target:"module_manager", "continue_processing: {}", continue_processing);
-                            if !continue_processing {
-                                stop = true;
-                                info!(target:"module_manager", "Stop processing modules");
-                                break;
-                            }
-                        } else {
-                            info!(target:"module_manager", "condition don't match");
-                        }
-                    } else if !module.enabled {
-                        warn!(target:"module_manager", "Unknown datatype: {}", self.data.datatype);
-                    }
 
-                }
+                let stop_arc_cloned: Arc<AtomicBool> = stop_arc.clone();
+                let module_found_arc_cloned: Arc<AtomicBool> = module_found_arc.clone();
+                let data_cloned = self.data.clone();
+                let item_cloned = item.clone();
+
+
+                children.push(thread::spawn(move || {
+                    let module: Module = decode(&*item_cloned.to_string()).unwrap();
+                    if module.priority == priority {
+                        module_found_arc_cloned.store(true, Ordering::Relaxed);
+                        info!(target:"module_manager", "Module found: {}", module.name);
+                        // Parse text module
+                        if module.enabled && data_cloned.datatype == "text" {
+                            let re = Regex::new(&*module.condition).unwrap();
+                            if re.is_match(&*data_cloned.content.to_lowercase()) {
+                                info!(target:"module_manager", "The module match! Launch module...");
+                                let continue_processing =
+                                    ModuleManager::exec_module(module.path, data_cloned.clone());
+                                info!(target:"module_manager", "continue_processing: {}", continue_processing);
+                                if !continue_processing {
+                                    stop_arc_cloned.store(true, Ordering::Relaxed);
+                                    info!(target:"module_manager", "Stop processing modules");
+                                    return;
+                                }
+                            } else {
+                                info!(target:"module_manager", "condition don't match");
+                            }
+                        } else if !module.enabled {
+                            warn!(target:"module_manager", "Unknown datatype: {}", data_cloned.datatype);
+                        }
+                    }
+                }));
             }
-            if !module_found {
+
+            for child in children {
+                // Wait for the thread to finish. Returns a result.
+                let _ = child.join();
+            }
+
+            if !module_found_arc.load(Ordering::Relaxed) {
                 break;
             }
             priority += 1;
