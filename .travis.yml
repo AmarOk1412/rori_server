@@ -2,9 +2,6 @@ language: python
 git:
     submodules: false
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
   - "3.5"
 env:
   - RUST_VERSION=1.13.0
@@ -25,4 +22,4 @@ install:
   - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PYTHON_LIB:$HOME/rust/lib"
   - rustc -V
 script:
-  - make test extensions
+  - cargo build
