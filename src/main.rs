@@ -1,3 +1,4 @@
+extern crate cpython;
 extern crate crypto;
 extern crate env_logger;
 extern crate iron;
@@ -5,11 +6,10 @@ extern crate iron;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+extern crate openssl;
 extern crate rustc_serialize;
 extern crate regex;
 extern crate router;
-
-extern crate openssl;
 
 mod core;
 mod rori_utils;

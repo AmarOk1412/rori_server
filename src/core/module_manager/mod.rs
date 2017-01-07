@@ -1,11 +1,10 @@
-
+use cpython::Python;
+use regex::Regex;
 use rori_utils::data::RoriData;
 use rustc_serialize::json::decode;
 use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::prelude::*;
-use regex::Regex;
-use std::process::Command;
 
 #[derive(Clone, RustcDecodable, RustcEncodable, Default, PartialEq, Debug)]
 pub struct Module {
@@ -46,12 +45,14 @@ impl ModuleManager {
         // parse json
         let modules_list = Json::from_str(&*modules).unwrap();
         // foreach priority, launch enabled modules if condition ok
-        let mut stop = false;
         let mut priority = 0;
+        // TODO Arc
+        let mut stop = false;
         let mut module_found = false;
         while !stop {
             module_found = false;
             for item in modules_list.as_array().unwrap() {
+                // TODO new thread
                 let module: Module = decode(&*item.to_string()).unwrap();
                 if module.priority == priority {
                     module_found = true;
@@ -61,24 +62,10 @@ impl ModuleManager {
                         let re = Regex::new(&*module.condition).unwrap();
                         if re.is_match(&*self.data.content.to_lowercase()) {
                             info!(target:"module_manager", "The module match! Launch module...");
-                            // TODO launch directly with Python3
-                            let author = format!("\"{}\"", &*self.data.author);
-                            let content = format!("\"{}\"", &*self.data.content);
-                            let client = format!("\"{}\"", &*self.data.client);
-                            let datatype = format!("\"{}\"", &*self.data.datatype);
-                            let output = Command::new("/bin/sh")
-                                .arg("exec_mod.sh")
-                                .arg(module.path)
-                                .arg(author)
-                                .arg(content)
-                                .arg(client)
-                                .arg(datatype)
-                                .output()
-                                .expect("failed to execute process");
-                            let continue_processing = String::from_utf8(output.stdout)
-                                .unwrap_or(String::from(""));
+                            let continue_processing = ModuleManager::exec_module(module.path,
+                                                                                 self.data.clone());
                             info!(target:"module_manager", "continue_processing: {}", continue_processing);
-                            if continue_processing.trim().to_lowercase().contains("false") {
+                            if !continue_processing {
                                 stop = true;
                                 info!(target:"module_manager", "Stop processing modules");
                                 break;
@@ -97,5 +84,17 @@ impl ModuleManager {
             }
             priority += 1;
         }
+    }
+
+    fn exec_module(module: String, roridata: RoriData) -> bool {
+        let py = Python::acquire_gil();
+        let py = py.python();
+        let load_module = py.import("rori_modules.load_module").unwrap();
+        let continue_processing: bool =
+            load_module.call(py, "exec_module", (module, roridata.to_string()), None)
+                .unwrap()
+                .extract(py)
+                .unwrap();
+        continue_processing
     }
 }
