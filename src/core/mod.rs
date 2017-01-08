@@ -207,6 +207,7 @@ impl API {
         router.get("/rm/:id", API::remove_client, "rm");
         router.get("/client/:owner/:datatype", API::get_client, "client");
         router.post("/send/:id", API::send_from_rori, "send");
+        router.post("/reprocess", API::reprocess, "reprocess");
         Iron::new(router).http(&*self.address).unwrap();
     }
 
@@ -215,7 +216,8 @@ impl API {
         let help = "RORI API:
         GET rm/:id => remove an endpoint
         GET client/:owner/:datatype => get endpoint list
-        POST RoriData to send/:id => send data for client (not implemented)";
+        POST RoriData to send/:id => send data for client
+        POST RoriData to reprocess/ => reprocess this data and call modules";
         Ok(Response::with((status::Ok, help)))
     }
 
@@ -259,5 +261,14 @@ impl API {
             .unwrap()
             .send_to_endpoint(id as u64, &payload);
         Ok(Response::with((status::Ok, payload)))
+    }
+
+    pub fn reprocess(request: &mut Request) -> IronResult<Response> {
+        // Warning, will process and after return OK!
+        let mut payload = String::from("");
+        let _ = request.body.read_to_string(&mut payload);
+        let module_manager = ModuleManager::new(RoriData::from_json(String::from(payload)));
+        module_manager.process();
+        Ok(Response::with((status::Ok, "")))
     }
 }
