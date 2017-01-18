@@ -11,13 +11,14 @@ extern crate rustc_serialize;
 extern crate regex;
 extern crate router;
 
-mod core;
-mod rori_utils;
+pub mod core;
+pub mod rori_utils;
 
 use core::Server;
 use core::API;
 use std::thread;
 
+#[allow(dead_code)]
 fn main() {
     // Init logging
     env_logger::init().unwrap();

@@ -78,17 +78,16 @@ impl ModuleManager {
                         if module.enabled && data_cloned.datatype == "text" {
                             let re = Regex::new(&*module.condition).unwrap();
                             if re.is_match(&*data_cloned.content.to_lowercase()) {
-                                info!(target:"module_manager", "The module match! Launch module...");
+                                info!(target:"module_manager", "{} match! Launch module...", module.name);
                                 let continue_processing =
                                     ModuleManager::exec_module(module.path, data_cloned.clone());
-                                info!(target:"module_manager", "continue_processing: {}", continue_processing);
+                                info!(target:"module_manager", "{}: continue_processing: {}", module.name, continue_processing);
                                 if !continue_processing {
                                     stop_arc_cloned.store(true, Ordering::Relaxed);
-                                    info!(target:"module_manager", "Stop processing modules");
                                     return;
                                 }
                             } else {
-                                info!(target:"module_manager", "condition don't match");
+                                info!(target:"module_manager", "{} condition don't match", module.name);
                             }
                         } else if !module.enabled {
                             warn!(target:"module_manager", "Unknown datatype: {}", data_cloned.datatype);

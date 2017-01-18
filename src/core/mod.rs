@@ -22,7 +22,7 @@ use std::sync::Mutex;
 use std::thread;
 
 lazy_static! {
-    static ref ENDPOINTMANAGER: Mutex<EndpointManager> = Mutex::new(EndpointManager::new());
+    pub static ref ENDPOINTMANAGER: Mutex<EndpointManager> = Mutex::new(EndpointManager::new());
 }
 
 struct Client {
@@ -233,9 +233,12 @@ impl API {
     }
 
     pub fn get_client(request: &mut Request) -> IronResult<Response> {
-        let owner = request.extensions.get::<Router>().unwrap().find("owner").unwrap_or("");
+        let mut owner = request.extensions.get::<Router>().unwrap().find("owner").unwrap_or("");
         if owner == "" {
             return Ok(Response::with((status::Ok, "No owner specified")));
+        }
+        if owner == "*" {
+            owner = "";
         }
         let datatype = request.extensions.get::<Router>().unwrap().find("datatype").unwrap_or("");
         if datatype == "" {
