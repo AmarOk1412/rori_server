@@ -51,8 +51,6 @@ impl ModuleManager {
         // foreach priority, launch enabled modules if condition ok
         let mut priority = 0;
 
-
-        // TODO Arc
         let stop: AtomicBool = AtomicBool::new(false);
         let stop_arc: Arc<AtomicBool> = Arc::new(stop);
         let module_found: AtomicBool = AtomicBool::new(false);

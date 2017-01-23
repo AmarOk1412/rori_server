@@ -1,6 +1,7 @@
 
 pub mod endpoint_manager;
 pub mod module_manager;
+pub mod words_manager;
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
