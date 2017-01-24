@@ -5,6 +5,7 @@ use std::mem;
 
 pub struct WordsManager {
     pub graph: DiGraphMap<&'static str, i64>,
+    pub path: String,
 }
 
 fn string_to_static_str(s: String) -> &'static str {
@@ -17,14 +18,17 @@ fn string_to_static_str(s: String) -> &'static str {
 
 impl WordsManager {
     pub fn new(word_file_path: String) -> WordsManager {
-        let mut file = File::open(word_file_path)
+        let mut file = File::open(word_file_path.clone())
             .ok()
             .expect("Can't find modules for this type");
         let mut to_parse = String::new();
         file.read_to_string(&mut to_parse)
             .ok()
             .expect("failed to read module list");
-        WordsManager { graph: WordsManager::build_graph(to_parse) }
+        WordsManager {
+            graph: WordsManager::build_graph(to_parse),
+            path: word_file_path,
+        }
     }
 
     pub fn build_graph(to_parse: String) -> DiGraphMap<&'static str, i64> {
@@ -66,5 +70,38 @@ impl WordsManager {
 
     pub fn is_word_in_category(&self, word: String, category: String) -> bool {
         self.get_words_from_category(category).contains(&word)
+    }
+
+    pub fn add_word_to_category(&mut self, word: String, category: String) {
+        let child_node_key = string_to_static_str(word);
+        let parent_node_key = string_to_static_str(category);
+
+        self.graph.add_node(child_node_key);
+        self.graph.add_node(parent_node_key);
+        self.graph.add_edge(parent_node_key, child_node_key, 1);
+        self.save();
+    }
+
+    pub fn remove_word_from_category(&mut self, word: String, category: String) {
+        let child_node_key = string_to_static_str(word);
+        let parent_node_key = string_to_static_str(category);
+
+        self.graph.remove_edge(parent_node_key, child_node_key);
+        if self.graph.neighbors(parent_node_key).count() == 0 {
+            self.graph.remove_node(parent_node_key);
+        }
+        if self.graph.neighbors(child_node_key).count() == 0 {
+            self.graph.remove_node(child_node_key);
+        }
+        self.save();
+    }
+
+    pub fn save(&self) {
+        if self.path != String::from("") {
+            let mut buffer = File::create(&*self.path).unwrap();
+            for edge in self.graph.all_edges() {
+                let _ = buffer.write_fmt(format_args!("{:?}:{:?}", edge.0, edge.1));
+            }
+        }
     }
 }

@@ -22,11 +22,13 @@ use std::thread;
 
 #[allow(dead_code)]
 fn main() {
-    let wm = WordsManager::new(String::from("wordsclassification"));
-    wm.get_words_from_category(String::from("color"));
-    println!("{:?}", wm.is_word_in_category(String::from("red"), String::from("color")));
-    println!("{:?}", wm.is_word_in_category(String::from("red2"), String::from("color")));
+    let mut wm = WordsManager {
+        graph: WordsManager::build_graph(String::from("")),
+        path: String::from(""),
+    };
 
+    wm.add_word_to_category(String::from("child0"), String::from("parent"));
+    wm.add_word_to_category(String::from("child1"), String::from("parent"));
     // Init logging
     env_logger::init().unwrap();
 
