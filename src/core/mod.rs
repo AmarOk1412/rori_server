@@ -7,6 +7,7 @@ use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use core::module_manager::ModuleManager;
 use core::endpoint_manager::EndpointManager;
+use core::words_manager::WordsManager;
 use iron::prelude::*;
 use iron::status;
 use openssl::ssl::{SslContext, SslMethod, SslStream, SSL_VERIFY_NONE};
@@ -209,6 +210,12 @@ impl API {
         router.get("/client/:owner/:datatype", API::get_client, "client");
         router.post("/send/:id", API::send_from_rori, "send");
         router.post("/reprocess", API::reprocess, "reprocess");
+        router.get("/add_word/:category/:word",
+                   API::add_word_to_category,
+                   "add_word");
+        router.get("/rm_word/:category/:word",
+                   API::remove_word_from_category,
+                   "rm_word");
         Iron::new(router).http(&*self.address).unwrap();
     }
 
@@ -218,7 +225,9 @@ impl API {
         GET rm/:id => remove an endpoint
         GET client/:owner/:datatype => get endpoint list
         POST RoriData to send/:id => send data for client
-        POST RoriData to reprocess/ => reprocess this data and call modules";
+        POST RoriData to reprocess/ => reprocess this data and call modules
+        GET add_word/:category/:word => Add word to a category
+        GET rm_word/:category/:word => Remove word from category";
         Ok(Response::with((status::Ok, help)))
     }
 
@@ -273,6 +282,22 @@ impl API {
         let _ = request.body.read_to_string(&mut payload);
         let module_manager = ModuleManager::new(RoriData::from_json(String::from(payload)));
         module_manager.process();
+        Ok(Response::with((status::Ok, "")))
+    }
+
+    pub fn add_word_to_category(request: &mut Request) -> IronResult<Response> {
+        let category = request.extensions.get::<Router>().unwrap().find("category").unwrap_or("");
+        let word = request.extensions.get::<Router>().unwrap().find("word").unwrap_or("");
+        let mut wm = WordsManager::new(String::from("wordsclassification"));
+        wm.add_word_to_category(String::from(word), String::from(category));
+        Ok(Response::with((status::Ok, "")))
+    }
+
+    pub fn remove_word_from_category(request: &mut Request) -> IronResult<Response> {
+        let category = request.extensions.get::<Router>().unwrap().find("category").unwrap_or("");
+        let word = request.extensions.get::<Router>().unwrap().find("word").unwrap_or("");
+        let mut wm = WordsManager::new(String::from("wordsclassification"));
+        wm.remove_word_from_category(String::from(word), String::from(category));
         Ok(Response::with((status::Ok, "")))
     }
 }

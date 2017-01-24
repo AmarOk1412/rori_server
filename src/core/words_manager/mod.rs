@@ -100,7 +100,7 @@ impl WordsManager {
         if self.path != String::from("") {
             let mut buffer = File::create(&*self.path).unwrap();
             for edge in self.graph.all_edges() {
-                let _ = buffer.write_fmt(format_args!("{:?}:{:?}", edge.0, edge.1));
+                let _ = buffer.write_fmt(format_args!("{}:{}\n", edge.1, edge.0));
             }
         }
     }

@@ -6,7 +6,6 @@
  "cert":"key/cert.pem",
  "key":"key/key.pem",
  "secret":"secret",
- "word_list":"wordsclassification",
  "authorize": [
    {
      "name":"irc_entry_module",

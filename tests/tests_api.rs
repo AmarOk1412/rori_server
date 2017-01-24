@@ -10,30 +10,6 @@ mod tests_api {
     use std::io::Read;
 
     #[test]
-    fn test_help() {
-        thread::spawn(move || {
-            let mut api = API::new("config_server.json");
-            api.start();
-        });
-
-        let client = Client::new();
-        let mut s = String::new();
-
-        let _ = client.get("http://localhost:3000/help/")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
-
-        assert_eq!("RORI API:
-        GET rm/:id => remove an endpoint
-        GET client/:owner/:datatype => get endpoint list
-        POST RoriData to send/:id => send data for client
-        POST RoriData to reprocess/ => reprocess this data and call modules",
-                   s);
-    }
-
-    #[test]
     fn test_users() {
         thread::spawn(move || {
             let mut api = API::new("config_server.json");
