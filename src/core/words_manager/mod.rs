@@ -16,7 +16,16 @@ fn string_to_static_str(s: String) -> &'static str {
     }
 }
 
+/**
+ * The WordsManager manages words. It constructs a Graph to classify words based on the content of
+ * wordsclassification. In this file, words are stored like: word:catgory (for example blue:color)
+ */
 impl WordsManager {
+    /**
+     * Create the WordsManager
+     * @param: word_file_path the path of the wordsclassification file
+     * @return a WordsManager
+     */
     pub fn new(word_file_path: String) -> WordsManager {
         let mut file = File::open(word_file_path.clone())
             .ok()
@@ -31,6 +40,11 @@ impl WordsManager {
         }
     }
 
+    /**
+     * Construct the graph to describes words classification
+     * @param to_parse the string to process
+     * @return the graph
+     */
     pub fn build_graph(to_parse: String) -> DiGraphMap<&'static str, i64> {
         let mut final_graph = DiGraphMap::new();
         let to_parse: &'static str = string_to_static_str(to_parse);
@@ -50,6 +64,10 @@ impl WordsManager {
         final_graph
     }
 
+    /**
+     * @param category: the category to develop
+     * @return all words in this category
+     */
     pub fn get_words_from_category(&self, category: String) -> Vec<String> {
         let mut words_list = Vec::new();
         let mut to_develop = Vec::new();
@@ -68,10 +86,20 @@ impl WordsManager {
         words_list
     }
 
+    /**
+     * @param word: the word to find in category
+     * @param category: the category to develop
+     * @return true if the word is in the category, false else
+     */
     pub fn is_word_in_category(&self, word: String, category: String) -> bool {
         self.get_words_from_category(category).contains(&word)
     }
 
+    /**
+     * Add a word to a category
+     * @param word: the word to add
+     * @param category
+     */
     pub fn add_word_to_category(&mut self, word: String, category: String) {
         let child_node_key = string_to_static_str(word);
         let parent_node_key = string_to_static_str(category);
@@ -82,6 +110,11 @@ impl WordsManager {
         self.save();
     }
 
+    /**
+     * Remove a word to a category
+     * @param word: the word to add
+     * @param category
+     */
     pub fn remove_word_from_category(&mut self, word: String, category: String) {
         let child_node_key = string_to_static_str(word);
         let parent_node_key = string_to_static_str(category);
@@ -96,6 +129,9 @@ impl WordsManager {
         self.save();
     }
 
+    /**
+     * Save the graph in a file
+     */
     pub fn save(&self) {
         if self.path != String::from("") {
             let mut buffer = File::create(&*self.path).unwrap();

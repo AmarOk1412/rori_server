@@ -22,13 +22,6 @@ use std::thread;
 
 #[allow(dead_code)]
 fn main() {
-    let mut wm = WordsManager {
-        graph: WordsManager::build_graph(String::from("")),
-        path: String::from(""),
-    };
-
-    wm.add_word_to_category(String::from("child0"), String::from("parent"));
-    wm.add_word_to_category(String::from("child1"), String::from("parent"));
     // Init logging
     env_logger::init().unwrap();
 

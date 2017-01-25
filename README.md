@@ -65,10 +65,6 @@ Now, you _config_server.json_ looks like this:
 
 To understand the code, I will describe the process of a _RORIData_ through this application. A _RORIData_ is received by `core::Server::handle_client`. This function will make the distinction between a _RORIData_ for the server or for an endpoint. For example, if the datatype is _register_, it's a _RORIData_ for the server. This data is processed by the `ENDPOINTMANAGER` which manage endpoints. In the second case, the data is processed by a `ModuleManager` which calls modules for this datatype. To understand how modules works, you can read this [page](https://github.com/AmarOk1412/RORI/wiki/Write-modules). Then, when a module want to send data to a particular endpoint, it can use the API to get endpoint and send data. The code of these API is in `core::mod.rs` (TODO, the class will move in `core::API`).
 
-# TODO
-
-Improve regular expressions for text modules conditions, for example with word groups lexical fields. And improve the code to call modules.
-
 # Execution
 
 A binary is present in the _target/_ directory after a `cargo build` or you can execute `cargo run` in your shell.

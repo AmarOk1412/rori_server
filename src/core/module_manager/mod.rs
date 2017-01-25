@@ -5,6 +5,7 @@ use rustc_serialize::json::decode;
 use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::prelude::*;
+use core::words_manager::WordsManager;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -35,7 +36,43 @@ impl ModuleManager {
         return ModuleManager { data: data };
     }
 
-    #[allow(unused_assignments)]
+    /**
+     * Transform an improved regex to a classical regex
+     * @param from: the regex to transform
+     * @return the transformed regex
+     */
+    pub fn transform_to_regex(from: String) -> String {
+        // Process $CAT(word) function
+        if from.contains("$CAT") {
+            let mut to_change = from.to_string();
+            let wm = WordsManager::new(String::from("wordsclassification"));
+            let re = Regex::new(r"\$CAT\((\w+)\)").unwrap();
+            for cap in re.captures_iter(&*from) {
+                let words = wm.get_words_from_category(String::from(&cap[1]));
+                let mut replace_with = String::from("");
+                if words.len() != 0 {
+                    let mut cpt = 0;
+                    replace_with.push_str("(");
+                    for word in words.clone() {
+                        cpt += 1;
+                        replace_with.push_str(&*word);
+                        // TODO CATSTEM + is $CAT(color) a color ? => yes | is
+                        if cpt != words.len() {
+                            replace_with.push_str("|");
+                        }
+                    }
+                    replace_with.push_str(")");
+                }
+                to_change = re.replace(&*to_change, &*replace_with);
+            }
+            return String::from(to_change);
+        }
+        from
+    }
+
+    /**
+     * Process a RORIData and executes modules
+     */
     pub fn process(&self) {
         // open modules/self.data.datatype.json
         let path = format!("rori_modules/{}.json", self.data.datatype);
@@ -59,14 +96,12 @@ impl ModuleManager {
             let mut children = vec![];
             module_found_arc.store(false, Ordering::Relaxed);
             for item in modules_list.as_array().unwrap() {
-                // TODO new thread
-
                 let stop_arc_cloned: Arc<AtomicBool> = stop_arc.clone();
                 let module_found_arc_cloned: Arc<AtomicBool> = module_found_arc.clone();
                 let data_cloned = self.data.clone();
                 let item_cloned = item.clone();
 
-
+                // Each modules are tested in a new thread.
                 children.push(thread::spawn(move || {
                     let module: Module = decode(&*item_cloned.to_string()).unwrap();
                     if module.priority == priority {
@@ -74,7 +109,8 @@ impl ModuleManager {
                         info!(target:"module_manager", "Module found: {}", module.name);
                         // Parse text module
                         if module.enabled && data_cloned.datatype == "text" {
-                            let re = Regex::new(&*module.condition).unwrap();
+                            let final_regex = ModuleManager::transform_to_regex(module.condition);
+                            let re = Regex::new(&*final_regex).unwrap();
                             if re.is_match(&*data_cloned.content.to_lowercase()) {
                                 info!(target:"module_manager", "{} match! Launch module...", module.name);
                                 let continue_processing =
@@ -106,6 +142,12 @@ impl ModuleManager {
         }
     }
 
+    /**
+     * Execute a module
+     * @param module: the path of the module to execute
+     * @param roridata: the data to process (received from a client)
+     * @return if we should continue processing this data
+     */
     fn exec_module(module: String, roridata: RoriData) -> bool {
         let py = Python::acquire_gil();
         let py = py.python();

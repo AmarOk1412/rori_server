@@ -5,6 +5,9 @@ mod tests_api {
     use main::core::words_manager::*;
 
     #[test]
+    /**
+     * test if the graph is correctly created and if we can search in categories
+     */
     fn test_graph() {
         let to_parse = String::from("child1:parent
 child2:parent
@@ -34,6 +37,9 @@ child1:childchildchild");
     }
 
     #[test]
+    /**
+     * test if we can add/remove words from the graph
+     */
     fn test_add_remove_node() {
         let mut wm = WordsManager {
             graph: WordsManager::build_graph(String::from("")),
