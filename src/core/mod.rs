@@ -216,6 +216,7 @@ impl API {
         router.get("/rm_word/:category/:word",
                    API::remove_word_from_category,
                    "rm_word");
+        router.get("/is/:category/:word", API::is_word_in_category, "is_in");
         Iron::new(router).http(&*self.address).unwrap();
     }
 
@@ -227,7 +228,8 @@ impl API {
         POST RoriData to send/:id => send data for client
         POST RoriData to reprocess/ => reprocess this data and call modules
         GET add_word/:category/:word => Add word to a category
-        GET rm_word/:category/:word => Remove word from category";
+        GET rm_word/:category/:word => Remove word from category
+        GET is/:category/:word => Test if a word is in a category";
         Ok(Response::with((status::Ok, help)))
     }
 
@@ -299,5 +301,15 @@ impl API {
         let mut wm = WordsManager::new(String::from("wordsclassification"));
         wm.remove_word_from_category(String::from(word), String::from(category));
         Ok(Response::with((status::Ok, "")))
+    }
+
+    pub fn is_word_in_category(request: &mut Request) -> IronResult<Response> {
+        let category = request.extensions.get::<Router>().unwrap().find("category").unwrap_or("");
+        let word = request.extensions.get::<Router>().unwrap().find("word").unwrap_or("");
+        let wm = WordsManager::new(String::from("wordsclassification"));
+        if wm.is_word_in_category(String::from(word), String::from(category)) {
+            return Ok(Response::with((status::Ok, "1")));
+        }
+        Ok(Response::with((status::Ok, "0")))
     }
 }
