@@ -63,7 +63,7 @@ impl ModuleManager {
                     }
                     replace_with.push_str(")");
                 }
-                to_change = re.replace(&*to_change, &*replace_with);
+                to_change = re.replace(&*to_change, &*replace_with).to_string();
             }
             return String::from(to_change);
         }

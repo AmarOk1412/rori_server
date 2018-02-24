@@ -1,6 +1,6 @@
 [package]
 name = "rori_server"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["AmarOk <amarok@enconn.fr>"]
 
 [dependencies]
@@ -12,9 +12,9 @@ router = "*"
 hyper = "*"
 log = "*"
 env_logger = "*"
-openssl = "0.7.14"
+openssl = "0.10.4"
 rust-crypto = "^0.2"
-cpython = "0.1"
+cpython = "*"
 petgraph = "*"
 
 [lib]
