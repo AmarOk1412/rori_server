@@ -1,13 +1,12 @@
 extern crate main;
-extern crate hyper;
+extern crate reqwest;
 
 #[cfg(test)]
 mod tests_api {
     use main::core::*;
     use main::rori_utils::data::RoriData;
     use std::thread;
-    use hyper::client::Client;
-    use std::io::Read;
+    use reqwest;
 
     #[test]
     fn test_users() {
@@ -25,62 +24,35 @@ mod tests_api {
 
         ENDPOINTMANAGER.lock().unwrap().register_endpoint(data_to_process);
 
-        let client = Client::new();
-        let mut s = String::new();
+        // Find endpoint
+        let body = reqwest::get("http://localhost:3000/client/AmarOk/text").unwrap()
+                   .text().unwrap();
+
+        assert!(body != String::from("[]"));
 
         // Find endpoint
-        let _ = client.get("http://localhost:3000/client/AmarOk/text")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
-
-        assert!(s != String::from("[]"));
-
-        // Find endpoint
-        s = String::new();
-        let _ = client.get("http://localhost:3000/client/*/text")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
-
-        assert!(s != String::from("[]"));
+        let body = reqwest::get("http://localhost:3000/client/*/text").unwrap()
+                   .text().unwrap();
+        assert!(body != String::from("[]"));
 
         // Don't find any endpoint for user
-        s = String::new();
-        let _ = client.get("http://localhost:3000/client/NONE/text")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
+        let body = reqwest::get("http://localhost:3000/client/NONE/text").unwrap()
+                   .text().unwrap();
 
-        assert_eq!(s, String::from("[]"));
+        assert_eq!(body, String::from("[]"));
 
         // Find endpoint
-        s = String::new();
-        let _ = client.get("http://localhost:3000/client/*/NONE")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
+        let body = reqwest::get("http://localhost:3000/client/*/NONE").unwrap()
+                   .text().unwrap();
 
-        assert_eq!(s, String::from("[]"));
+        assert_eq!(body, String::from("[]"));
 
         // Remove endpoint
-        s = String::new();
-        let _ = client.get("http://localhost:3000/rm/0")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
-        s = String::new();
-        let _ = client.get("http://localhost:3000/client/*/text")
-            .send()
-            .unwrap()
-            .read_to_string(&mut s)
-            .unwrap();
+        let _ = reqwest::get("http://localhost:3000/rm/0").unwrap()
+                   .text().unwrap();
+        let body = reqwest::get("http://localhost:3000/client/*/text").unwrap()
+                   .text().unwrap();
 
-        assert_eq!(s, String::from("[]"));
+        assert_eq!(body, String::from("[]"));
     }
 }
