@@ -10,8 +10,7 @@ use core::endpoint_manager::EndpointManager;
 use core::words_manager::WordsManager;
 use iron::prelude::*;
 use iron::status;
-use openssl::ssl::{SslContext, SslMethod, SslStream, SSL_VERIFY_NONE};
-use openssl::x509::X509FileType::PEM;
+use openssl::ssl::{Ssl, SslContext, SslMethod, SslStream, SslVerifyMode, SslFiletype};
 use rori_utils::data::RoriData;
 use router::Router;
 use rustc_serialize::json::{self, decode};
@@ -98,27 +97,28 @@ impl Server {
 
     pub fn start(&mut self) {
         let listener = TcpListener::bind(&*self.address).unwrap();
-        let mut ssl_context = SslContext::new(SslMethod::Sslv23).unwrap();
-        match ssl_context.set_certificate_file(&*self.cert.clone(), PEM) {
+        let mut ssl_context = SslContext::builder(SslMethod::tls()).unwrap();
+        match ssl_context.set_certificate_file(&*self.cert.clone(), SslFiletype::PEM) {
             Ok(_) => info!(target:"Server", "Certificate set"),
             Err(_) => error!(target:"Server", "Can't set certificate file"),
         };
-        ssl_context.set_verify(SSL_VERIFY_NONE, None);
-        match ssl_context.set_private_key_file(&*self.key.clone(), PEM) {
+        ssl_context.set_verify(SslVerifyMode::NONE);
+        match ssl_context.set_private_key_file(&*self.key.clone(), SslFiletype::PEM) {
             Ok(_) => info!(target:"Server", "Private key set"),
             Err(_) => error!(target:"Server", "Can't set private key"),
         };
+        let ssl = ssl_context.build();
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
-                    let ssl_stream = SslStream::accept(&ssl_context, stream.try_clone().unwrap());
+                    let ssl_stream = Ssl::new(&ssl).unwrap().accept(stream);
                     let ssl_ok = match ssl_stream {
                         Ok(_) => true,
                         Err(_) => false,
                     };
                     if ssl_ok {
                         let ssl_stream = ssl_stream.unwrap();
-                        let client = Client::new(ssl_stream.try_clone().unwrap());
+                        let client = Client::new(ssl_stream);
                         self.handle_client(client);
                     } else {
                         error!(target:"Server", "Can't create SslStream");

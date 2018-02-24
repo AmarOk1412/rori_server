@@ -17,13 +17,12 @@ pub mod rori_utils;
 
 use core::Server;
 use core::API;
-use core::words_manager::WordsManager;
 use std::thread;
 
 #[allow(dead_code)]
 fn main() {
     // Init logging
-    env_logger::init().unwrap();
+    env_logger::init();
 
     // Launch API
     thread::spawn(move || {
